@@ -34,7 +34,7 @@ export default function NewWorkoutPage() {
   const [maxes, setMaxes] = useState<
     Record<
       string,
-      { pesoValor: number; pesoEtiqueta: string; repeticiones: number; fecha: string }
+      { pesoValor: number; pesoEtiqueta: string; repeticiones: number | null; fecha: string }
     >
   >({});
 
@@ -219,12 +219,12 @@ export default function NewWorkoutPage() {
                   )}
                 </div>
 
-                {/* Nota: peso máximo anterior */}
+                {/* Nota: peso máximo del último entrenamiento de este ejercicio */}
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                   {maxInfo
-                    ? `Máx anterior: ${maxInfo.pesoEtiqueta} × ${maxInfo.repeticiones} reps (${new Date(
-                        maxInfo.fecha
-                      ).toLocaleDateString('es-AR')})`
+                    ? `Máx última sesión: ${maxInfo.pesoEtiqueta}${
+                        maxInfo.repeticiones ? ` × ${maxInfo.repeticiones} reps` : ''
+                      } (${new Date(maxInfo.fecha).toLocaleDateString('es-AR')})`
                     : 'Sin registros previos'}
                 </p>
 

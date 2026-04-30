@@ -69,7 +69,7 @@ export const workoutsApi = {
         {
           pesoValor: number;
           pesoEtiqueta: string;
-          repeticiones: number;
+          repeticiones: number | null;
           fecha: string;
         }
       >;

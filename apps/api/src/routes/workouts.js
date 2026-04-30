@@ -115,7 +115,7 @@ router.get('/exercises', async (req, res) => {
   res.json({ exercises });
 });
 
-// GET /api/workouts/exercises/maxes — max weight ever lifted per exercise
+// GET /api/workouts/exercises/maxes — max weight from the LAST workout per exercise
 router.get('/exercises/maxes', async (req, res) => {
   const mongoose = require('mongoose');
   const uid = new mongoose.Types.ObjectId(req.userId);
@@ -124,25 +124,44 @@ router.get('/exercises/maxes', async (req, res) => {
     { $match: { userId: uid } },
     { $unwind: '$ejercicios' },
     { $unwind: '$ejercicios.series' },
-    { $match: { 'ejercicios.series.pesoValor': { $ne: null, $exists: true } } },
-    { $sort: { 'ejercicios.series.pesoValor': -1, fecha: -1 } },
+    {
+      $match: {
+        'ejercicios.series.pesoValor': { $ne: null, $exists: true },
+        // Excluir entradas sin reps reales (importadas como "sin reps registradas")
+        'ejercicios.series.repeticiones': { $gt: 0 },
+      },
+    },
+    // 1) Para cada (ejercicio, fecha) calcular el peso máximo de ese día
     {
       $group: {
-        _id: '$ejercicios.nombre',
-        pesoValor: { $first: '$ejercicios.series.pesoValor' },
-        pesoEtiqueta: { $first: '$ejercicios.series.pesoEtiqueta' },
-        repeticiones: { $first: '$ejercicios.series.repeticiones' },
-        fecha: { $first: '$fecha' },
+        _id: { nombre: '$ejercicios.nombre', fecha: '$fecha' },
+        pesoValor: { $max: '$ejercicios.series.pesoValor' },
+        series: { $push: '$ejercicios.series' },
+      },
+    },
+    // 2) Ordenar por fecha desc para que $first tome la sesión más reciente
+    { $sort: { '_id.fecha': -1 } },
+    {
+      $group: {
+        _id: '$_id.nombre',
+        pesoValor: { $first: '$pesoValor' },
+        series: { $first: '$series' },
+        fecha: { $first: '$_id.fecha' },
       },
     },
   ]);
 
   const maxes = {};
   for (const r of result) {
+    // Elegir la serie con mayor pesoValor en esa última sesión
+    const top = (r.series || [])
+      .filter((s) => s && s.pesoValor != null && s.repeticiones > 0)
+      .sort((a, b) => (b.pesoValor ?? 0) - (a.pesoValor ?? 0))[0];
+
     maxes[r._id] = {
       pesoValor: r.pesoValor,
-      pesoEtiqueta: r.pesoEtiqueta,
-      repeticiones: r.repeticiones,
+      pesoEtiqueta: top ? top.pesoEtiqueta : String(r.pesoValor),
+      repeticiones: top ? top.repeticiones : null,
       fecha: r.fecha,
     };
   }
