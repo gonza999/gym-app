@@ -115,6 +115,41 @@ router.get('/exercises', async (req, res) => {
   res.json({ exercises });
 });
 
+// GET /api/workouts/exercises/maxes — max weight ever lifted per exercise
+router.get('/exercises/maxes', async (req, res) => {
+  const mongoose = require('mongoose');
+  const uid = new mongoose.Types.ObjectId(req.userId);
+
+  const result = await Workout.aggregate([
+    { $match: { userId: uid } },
+    { $unwind: '$ejercicios' },
+    { $unwind: '$ejercicios.series' },
+    { $match: { 'ejercicios.series.pesoValor': { $ne: null, $exists: true } } },
+    { $sort: { 'ejercicios.series.pesoValor': -1, fecha: -1 } },
+    {
+      $group: {
+        _id: '$ejercicios.nombre',
+        pesoValor: { $first: '$ejercicios.series.pesoValor' },
+        pesoEtiqueta: { $first: '$ejercicios.series.pesoEtiqueta' },
+        repeticiones: { $first: '$ejercicios.series.repeticiones' },
+        fecha: { $first: '$fecha' },
+      },
+    },
+  ]);
+
+  const maxes = {};
+  for (const r of result) {
+    maxes[r._id] = {
+      pesoValor: r.pesoValor,
+      pesoEtiqueta: r.pesoEtiqueta,
+      repeticiones: r.repeticiones,
+      fecha: r.fecha,
+    };
+  }
+
+  res.json({ maxes });
+});
+
 // GET /api/workouts/exercises/:name/history — all sets for a specific exercise over time
 router.get('/exercises/:name/history', async (req, res) => {
   const mongoose = require('mongoose');

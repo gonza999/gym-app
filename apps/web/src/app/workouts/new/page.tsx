@@ -31,11 +31,28 @@ export default function NewWorkoutPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notasGenerales, setNotasGenerales] = useState('');
+  const [maxes, setMaxes] = useState<
+    Record<
+      string,
+      { pesoValor: number; pesoEtiqueta: string; repeticiones: number; fecha: string }
+    >
+  >({});
 
   // Cuando cambia el tipo, recargar los ejercicios del template
   useEffect(() => {
     setEjercicios(buildExercisesFromTemplate(tipo));
   }, [tipo]);
+
+  // Cargar pesos máximos históricos por ejercicio
+  useEffect(() => {
+    if (!user) return;
+    workoutsApi
+      .exerciseMaxes()
+      .then((res) => setMaxes(res.maxes))
+      .catch(() => {
+        /* silencioso: no bloquear el formulario */
+      });
+  }, [user]);
 
   if (!user) {
     router.push('/login');
@@ -185,9 +202,11 @@ export default function NewWorkoutPage() {
 
           {/* Ejercicios */}
           <div className="space-y-4">
-            {ejercicios.map((ej, exIdx) => (
+            {ejercicios.map((ej, exIdx) => {
+              const maxInfo = maxes[ej.nombre];
+              return (
               <div key={exIdx} className="border rounded-lg p-4 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-1">
                   <h3 className="text-lg font-medium dark:text-white">{ej.nombre}</h3>
                   {ejercicios.length > 1 && (
                     <button
@@ -199,6 +218,15 @@ export default function NewWorkoutPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Nota: peso máximo anterior */}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  {maxInfo
+                    ? `Máx anterior: ${maxInfo.pesoEtiqueta} × ${maxInfo.repeticiones} reps (${new Date(
+                        maxInfo.fecha
+                      ).toLocaleDateString('es-AR')})`
+                    : 'Sin registros previos'}
+                </p>
 
                 {/* Series */}
                 <div className="space-y-2">
@@ -262,7 +290,8 @@ export default function NewWorkoutPage() {
                   + Agregar serie
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Agregar ejercicio extra */}

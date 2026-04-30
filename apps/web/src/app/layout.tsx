@@ -7,6 +7,11 @@ import InstallPrompt from '@/components/InstallPrompt';
 export const metadata: Metadata = {
   title: 'Gym Tracker',
   description: 'Registra y consulta tus rutinas de gimnasio',
+  icons: {
+    icon: '/icon-192.png',
+    shortcut: '/icon-192.png',
+    apple: '/icon-192.png',
+  },
 };
 
 export default function RootLayout({
@@ -18,6 +23,9 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="shortcut icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="theme-color" content="#2563eb" />
         <script
           dangerouslySetInnerHTML={{

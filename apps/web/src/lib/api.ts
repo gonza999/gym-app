@@ -62,6 +62,18 @@ export const workoutsApi = {
         lastPeso: string | null;
       }[];
     }>('/api/workouts/exercises'),
+  exerciseMaxes: () =>
+    request<{
+      maxes: Record<
+        string,
+        {
+          pesoValor: number;
+          pesoEtiqueta: string;
+          repeticiones: number;
+          fecha: string;
+        }
+      >;
+    }>('/api/workouts/exercises/maxes'),
   exerciseHistory: (name: string) =>
     request<{
       history: {
